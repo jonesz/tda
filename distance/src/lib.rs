@@ -1,19 +1,42 @@
 // distance/src/lib.rs
 
 pub enum Metric {
-    Euclidean,
     Manhattan,
+    Euclidean,
+}
+
+/// Given a point cloud (a Vector of Vectors containing point data) and a
+/// metric, compute a distance matrix for the entirety.
+pub fn dist(point_cloud: Vec<Vec<f64>>, metric: Metric) -> Vec<Vec<f64>> {
+    let mut r = Vec::new();
+
+    let f = match metric {
+        Metric::Manhattan => manhattan_distance,
+        Metric::Euclidean => euclidean_distance,
+    };
+
+    // TODO: This can be minimized down from O(n^2) to O(nlogn), see a
+    // triangular distance matrix.
+    for x in &point_cloud {
+        let mut tmp = Vec::new();
+        for y in &point_cloud {
+            tmp.push(f(x, y));
+        }
+        r.push(tmp)
+    }
+
+    r
 }
 
 /// Compute the manhattan distance between two f64 vectors.
-pub fn manhattan_distance(p: &[f64], q: &[f64]) -> f64 {
+fn manhattan_distance(p: &[f64], q: &[f64]) -> f64 {
     p.iter()
         .zip(q.iter())
         .fold(0.0, |acc, (x, y)| acc + (x - y).abs())
 }
 
 /// Compute the euclidean distance between two f64 vectors.
-pub fn euclidean_distance(p: &[f64], q: &[f64]) -> f64 {
+fn euclidean_distance(p: &[f64], q: &[f64]) -> f64 {
     p.iter()
         .zip(q.iter())
         .fold(0.0, |acc, (x, y)| acc + ((x - y) * (x - y)))
@@ -24,6 +47,17 @@ pub fn euclidean_distance(p: &[f64], q: &[f64]) -> f64 {
 mod tests {
 
     use super::*;
+
+    #[test]
+    fn test_dist() {
+        let a = vec![vec![1.0], vec![2.0], vec![3.0]];
+        let b = vec![
+            vec![0.0, 1.0, 2.0],
+            vec![1.0, 0.0, 1.0],
+            vec![2.0, 1.0, 0.0],
+        ];
+        assert_eq!(dist(a, Metric::Euclidean), b)
+    }
 
     #[test]
     fn test_manhattan() {
