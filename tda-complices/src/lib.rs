@@ -1,4 +1,5 @@
 pub mod rips;
+pub mod viz;
 
 #[derive(Debug)]
 pub struct Simplex {

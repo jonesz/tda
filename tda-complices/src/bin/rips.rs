@@ -1,6 +1,7 @@
 use distance::{dist, Metric};
 use rand::prelude::*;
 use tda_complices::rips::naive;
+use tda_complices::viz::graphviz;
 
 fn sample(k: usize) -> Vec<Vec<f64>> {
     let mut rng = rand::thread_rng();
@@ -13,6 +14,9 @@ fn sample(k: usize) -> Vec<Vec<f64>> {
 }
 
 fn main() {
-    let rips = naive::rips(dist(sample(3), Metric::Manhattan), 0.3, 2);
+    let rips = naive::rips(dist(sample(30), Metric::Manhattan), 0.01, 4);
+    use std::fs::File;
+    let mut f = File::create("example.dot").unwrap();
     println!("{:?}", rips);
+    graphviz::render_to(rips, &mut f);
 }

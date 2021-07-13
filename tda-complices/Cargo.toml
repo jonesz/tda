@@ -8,3 +8,4 @@ edition = "2018"
 [dependencies]
 rand = "0.8.4"
 distance = { path = "../distance" }
+dot = "0.1.4"
