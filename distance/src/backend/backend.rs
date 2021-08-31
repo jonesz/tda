@@ -4,6 +4,7 @@ use crate::MetricFn;
 
 use std::ops::{Mul, Sub};
 
+#[derive(Clone, Copy)]
 pub enum Backend {
     Native,
     WGPU,
