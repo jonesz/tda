@@ -1,4 +1,5 @@
 // distance/src/lib.rs
+//! Utilities for computing distance between vectors.
 mod backend;
 
 use backend::backend::{native_handler, Backend};
@@ -33,6 +34,7 @@ where
     }
 }
 
+/// Given some point cloud data, produce a distance matrix between each point.
 pub fn point_cloud_dist<T>(
     data: &Vec<Vec<T>>,
     metric_fn: Option<MetricFn>,
