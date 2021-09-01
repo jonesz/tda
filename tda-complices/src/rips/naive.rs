@@ -7,7 +7,7 @@ use std::iter::FromIterator;
 // the Vietoris-Rips Complex - Afra Zomordian".
 
 /// Compute the neighborhood graph for a distance matrix.
-fn compute_neighborhood(dist_mat: Vec<Vec<f64>>, epsilon: f64) -> Vec<Vec<u8>> {
+fn compute_neighborhood(dist_mat: &Vec<Vec<f64>>, epsilon: f64) -> Vec<Vec<u8>> {
     // TODO: This is obviously O(nlogn); compute the neighborhood of
     // combinations. All-pairs bruteforce: O(n^2).
     dist_mat
@@ -82,7 +82,9 @@ fn incremental(mat: Vec<Vec<f64>>, epsilon: f64) -> SimplicialComplex {
     panic!();
 }
 
-pub fn rips(mat: Vec<Vec<f64>>, epsilon: f64, k: usize) -> SimplicialComplex {
+/// Compute the Vietoris-Rips complex for a distance matrix with cutoff distance
+/// epsilon up the k'th degree simplex.
+pub fn rips(mat: &Vec<Vec<f64>>, epsilon: f64, k: usize) -> SimplicialComplex {
     inductive(compute_neighborhood(mat, epsilon), k)
 }
 
@@ -95,7 +97,7 @@ mod tests {
     fn test_compute_neighborhood_exact() {
         let a = vec![0.0, 3.0];
         let b = vec![3.0, 0.0];
-        let dist_mat = vec![a.as_slice(), b.as_slice()];
+        let dist_mat = vec![a, b];
 
         let res = compute_neighborhood(&dist_mat, 1.0);
         assert_eq!(res, vec![vec![0, 0], vec![0, 0]]);
