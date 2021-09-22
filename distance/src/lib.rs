@@ -5,6 +5,7 @@ mod backend;
 use backend::backend::{native_handler, Backend};
 use std::ops::{Mul, Sub};
 
+/// Enumeration for each specific distance formula.
 #[derive(Clone, Copy)]
 pub enum MetricFn {
     Euclidean,
@@ -17,18 +18,32 @@ impl Default for MetricFn {
     }
 }
 
+/// A type implementing the Metric trait allows for computation of distance
+/// via a.dist(b). Requires the specification of an output type.
 pub trait Metric<T, Rhs = Self> {
-    fn dist(&self, rhs: &Rhs, metric_fn: MetricFn, backend: Option<Backend>) -> f64;
+    type Output;
+
+    /// Compute the distance between two values of the same type.
+    fn dist(&self, rhs: &Rhs, metric_fn: MetricFn, backend: Option<Backend>) -> Self::Output;
 }
 
 impl<T> Metric<T> for Vec<T>
 where
     T: Sub<Output = T> + Mul<Output = T> + Into<f64> + Copy,
 {
-    fn dist(&self, rhs: &Vec<T>, metric_fn: MetricFn, backend: Option<Backend>) -> f64 {
+    type Output = f64;
+
+    fn dist(&self, rhs: &Vec<T>, metric_fn: MetricFn, backend: Option<Backend>) -> Self::Output {
         let backend = backend.unwrap_or(Backend::default());
         match backend {
             Backend::Native => native_handler(self.as_slice(), rhs.as_slice(), metric_fn),
+
+            // TODO: This probably isn't the correct way to do this; the
+            // current `point_cloud` implementation is to call this a.dist(b)
+            // function where a and b are both vectors. What ends up happening
+            // (if this was implemented) is multiple data transfers with the
+            // GPU when it would be much more efficient to coalesce into
+            // a single transaction.
             Backend::WGPU => panic!("Unimplemented"),
         }
     }
