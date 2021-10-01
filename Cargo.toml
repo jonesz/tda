@@ -10,3 +10,5 @@ edition = "2018"
 distance = { path = "distance" }
 tda-complices = { path = "tda-complices" }
 homology = { path = "homology" }
+viz = { path = "viz" }
+common = { path = "common" }
