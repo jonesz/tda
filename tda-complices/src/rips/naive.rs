@@ -1,62 +1,75 @@
 // src/rips/naive.rs
-use crate::{Simplex, SimplicialComplex};
-use std::collections::HashSet;
+use crate::{Filtration, Simplex, SimplicialComplex};
+use common::Matrix;
+
+use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
 // This specific implementation is built from the paper "Fast Construction of
 // the Vietoris-Rips Complex - Afra Zomordian".
 
 /// Compute the neighborhood graph for a distance matrix.
-fn compute_neighborhood(dist_mat: &Vec<Vec<f64>>, epsilon: f64) -> Vec<Vec<u8>> {
+fn compute_neighborhood(mat: &Matrix<f64>, epsilon: f64) -> (Matrix<bool>, f64) {
+    let mut out_mat = Matrix::new(mat.cols, mat.rows);
+    // Smallest value encountered that is greater than epsilon.
+    let mut eps = std::f64::MAX;
+
     // TODO: This is obviously O(nlogn); compute the neighborhood of
     // combinations. All-pairs bruteforce: O(n^2).
-    dist_mat
-        .iter()
-        .enumerate()
-        .map(|(j, x)| {
-            x.iter()
-                .enumerate()
-                .map(|(k, y)| if *y < epsilon && j != k { 1 } else { 0 })
-                .collect()
-        })
-        .collect()
-}
+    for i in 0..mat.cols {
+        for j in 0..mat.rows {
+            let tmp = mat.get(i, j).unwrap();
+            match tmp <= epsilon {
+                true => out_mat.set(i, j, true),
+                false => {
+                    out_mat.set(i, j, false);
+                    if tmp < eps {
+                        eps = tmp;
+                    }
+                }
+            }
+        }
+    }
 
-/// Compute the neighborhood graph for a distance matrix non-deterministically.
-fn compute_neighborhood_nondeterministic(dist_mat: Vec<Vec<f64>>, epsilon: f64) -> Vec<Vec<u8>> {
-    panic!();
+    (out_mat, eps)
 }
 
 /// Finds all neighbors of a vertex u within the neighborhood that precede
 /// it in the given ordering.
-fn lower_nbrs(neighborhood: &[Vec<u8>], u: &usize) -> Vec<usize> {
-    // TODO: There is a 'filter_map' within iterator; using that might
-    // improve perf?
-    neighborhood[*u]
-        .iter()
-        .enumerate()
-        .filter(|(v, x)| (u > v) && (**x == 1u8))
-        .map(|(v, _)| v)
-        .collect()
+fn lower_nbrs(neighborhood: &Matrix<bool>, u: usize) -> Vec<usize> {
+    let mut v = vec![];
+
+    for i in 0..neighborhood.rows {
+        let vrtx = neighborhood.get(u, i).unwrap();
+        if u > i && vrtx {
+            v.push(i);
+        }
+    }
+
+    v
 }
 
 /// The inductive algorithm presented.
-fn inductive(neighborhood: Vec<Vec<u8>>, k: usize) -> SimplicialComplex {
+fn inductive(neighborhood: &Matrix<bool>, k: usize) -> SimplicialComplex {
+    // The following is a Vec<Vec> where the outer index contains all Simplices
+    // of n-degree.
     let mut simplices = vec![];
+
     let mut zero_simplices = vec![];
-    for (k, _) in neighborhood.iter().enumerate() {
+    for k in 0..neighborhood.cols {
         zero_simplices.push(Simplex { vertices: vec![k] });
     }
-    simplices.push(zero_simplices);
 
-    // The simplicial complex now consists of the zero-skeleton.
+    // After this operation, the simplicial complex now consists of the
+    // zero-skeleton.
+    simplices.push(zero_simplices);
 
     for i in 1..k {
         let mut n_simplices = vec![];
         for tau in &simplices[i - 1] {
             let mut set: HashSet<usize> = HashSet::new();
             for (i, u) in tau.vertices.iter().enumerate() {
-                let n = lower_nbrs(&neighborhood, u);
+                let n = lower_nbrs(&neighborhood, *u);
                 if i == 0 {
                     set = HashSet::from_iter(n);
                 } else {
@@ -84,24 +97,49 @@ fn incremental(mat: Vec<Vec<f64>>, epsilon: f64) -> SimplicialComplex {
 
 /// Compute the Vietoris-Rips complex for a distance matrix with cutoff distance
 /// epsilon up the k'th degree simplex.
-pub fn rips(mat: &Vec<Vec<f64>>, epsilon: f64, k: usize) -> SimplicialComplex {
-    inductive(compute_neighborhood(mat, epsilon), k)
+pub fn rips(mat: &Matrix<f64>, epsilon: f64, k: usize) -> SimplicialComplex {
+    let (a, _) = compute_neighborhood(mat, epsilon);
+    inductive(&a, k)
 }
 
-#[cfg(test)]
-mod tests {
+pub fn rips_filter(mat: &Matrix<f64>, k: usize) -> Filtration {
+    let mut epsilon = 0.0;
 
-    use super::*;
+    // The value of epsilon a Simplex first appeared at.
+    let mut complex_map: HashMap<Simplex, f64> = HashMap::new();
+    // All simplices we encounter throughout the filtration.
+    let mut complex_set: Vec<HashSet<Simplex>> = Vec::new();
+    complex_set.resize(k, HashSet::new());
 
-    #[test]
-    fn test_compute_neighborhood_exact() {
-        let a = vec![0.0, 3.0];
-        let b = vec![3.0, 0.0];
-        let dist_mat = vec![a, b];
+    while epsilon != std::f64::MAX {
+        let (nbr, new_eps) = compute_neighborhood(mat, epsilon);
+        let simplicial_complex = inductive(&nbr, k);
 
-        let res = compute_neighborhood(&dist_mat, 1.0);
-        assert_eq!(res, vec![vec![0, 0], vec![0, 0]]);
-        let res = compute_neighborhood(&dist_mat, 6.0);
-        assert_eq!(res, vec![vec![0, 1], vec![1, 0]]);
+        for (deg, simplices) in simplicial_complex.simplices.iter().enumerate() {
+            for simplex in simplices {
+                // If the simplex doesn't exist within the complex, push it,
+                // then add the epsilon value it occured at to the map.
+                let set = &mut complex_set[deg];
+                if !set.contains(simplex) {
+                    set.insert(simplex.clone());
+                    complex_map.insert(simplex.clone(), epsilon);
+                }
+            }
+        }
+
+        epsilon = new_eps;
+    }
+
+    let mut simplices = vec![];
+
+    for deg in complex_set {
+        for simplex in deg {
+            let eps = complex_map.get(&simplex).unwrap();
+            simplices.push((*eps, simplex))
+        }
+    }
+
+    Filtration {
+        simplices: simplices,
     }
 }
