@@ -1,6 +1,8 @@
-// distance/src/backend/native.rs
+// distance/src/dist.rs
+//! Distance formula implementations.
 use std::ops::{Mul, Sub};
 
+/// d(p, q) = sqrt((p1 - q1)^2 + (p2 - q2)^2 + ... + (pn - qn)^2).
 pub fn euclidean_dist<T>(a: &[T], b: &[T]) -> f64
 where
     T: Sub<Output = T> + Mul<Output = T> + Into<f64> + Copy,
@@ -13,6 +15,7 @@ where
     r.sqrt()
 }
 
+/// d(p, q) = Sum {i=1; i=>n} abs(pi - qi).
 pub fn manhattan_dist<T>(a: &[T], b: &[T]) -> f64
 where
     T: Sub<Output = T> + Mul<Output = T> + Into<f64> + Copy,

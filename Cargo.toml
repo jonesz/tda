@@ -7,8 +7,9 @@ edition = "2018"
 
 [workspace]
 [dependencies]
-distance = { path = "distance" }
-tda-complices = { path = "tda-complices" }
-homology = { path = "homology" }
-viz = { path = "viz" }
 common = { path = "common" }
+distance = { path = "distance" }
+complex = { path = "complex" }
+viz = { path = "viz" }
+
+csv = "1.1.6"
