@@ -4,7 +4,7 @@ mod simplex;
 mod simplex_trie;
 pub mod vietoris_rips;
 
-pub struct SimplicialComplex(simplex_trie::SimplexTrie);
+pub struct SimplicialComplex(simplex_trie::SimplexTrie, usize);
 
 impl<'a> IntoIterator for &'a SimplicialComplex {
     type Item = simplex::Simplex;

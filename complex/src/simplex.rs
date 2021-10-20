@@ -71,6 +71,8 @@ impl Simplex {
         self.0.len() - 1
     }
 
+    // TODO: See note within `simplex_trie.rs` about the removal of this
+    // function.
     pub fn vertices(&self) -> &[Vertex] {
         &self.0
     }

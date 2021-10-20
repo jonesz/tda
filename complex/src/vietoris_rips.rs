@@ -34,7 +34,7 @@ fn lower_nbrs<M: Matrix<bool>>(adj: &M, vertex: &Vertex) -> Vec<usize> {
 /// Compute a Vietoris-Rips complex up to dimension 'dim' with an inductive
 /// algorithm.
 fn inductive<M: Matrix<bool>>(adj: &M, dim: usize, weight: usize) -> SimplicialComplex {
-    let mut sc = SimplicialComplex(SimplexTrie::new());
+    let mut sc = SimplicialComplex(SimplexTrie::new(), dim);
 
     // See `ITERATOR_ISSUE.md` for concerns about utilizing an iterator within
     // this function; utilizing two vectors is likely more performant.
