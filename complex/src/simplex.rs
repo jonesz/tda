@@ -76,6 +76,28 @@ impl Simplex {
     pub fn vertices(&self) -> &[Vertex] {
         &self.0
     }
+
+    /// Return whether this simplex is a face of another simplex.
+    pub fn is_face(&self, other: &Self) -> bool {
+        // Avoid underflow.
+        match other.dim() {
+            0 => return false,
+            _ => (),
+        }
+
+        match self.dim() == other.dim() - 1 {
+            true => {
+                // Each vertex should be a vertex on the other simplex.
+                for vrtx in self {
+                    if !other.0.contains(vrtx) {
+                        return false;
+                    }
+                }
+                true
+            }
+            false => false,
+        }
+    }
 }
 
 impl Ord for Simplex {
@@ -170,5 +192,23 @@ mod tests {
             format!("{}", simplex),
             "Simplex((1, 0), (2, 1), (5, 2), weight: 2)"
         );
+    }
+
+    #[test]
+    fn test_simplex_is_face() {
+        // 0-skeleton case.
+        let simplex_a = Simplex(vec![Vertex(1, 0)]);
+        let simplex_b = Simplex(vec![Vertex(2, 0)]);
+        assert_eq!(simplex_a.is_face(&simplex_b), false);
+
+        // 1-skeleton false case.
+        let simplex_a = Simplex(vec![Vertex(1, 0)]);
+        let simplex_b = Simplex(vec![Vertex(2, 0), Vertex(3, 0)]);
+        assert_eq!(simplex_a.is_face(&simplex_b), false);
+
+        // 1-skeleton true case.
+        let simplex_a = Simplex(vec![Vertex(1, 0)]);
+        let simplex_b = Simplex(vec![Vertex(1, 0), Vertex(3, 0)]);
+        assert_eq!(simplex_a.is_face(&simplex_b), true);
     }
 }

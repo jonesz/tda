@@ -5,9 +5,9 @@
 use common::{Matrix, MatrixOps};
 
 /// The reduction algorithm mod 2 presented on pg. 88.
-fn reduce_z2<M>(mat: &mut M, x: usize)
+pub fn reduce_z2<M>(mat: &mut M, x: usize)
 where
-    M: Matrix<isize> + MatrixOps<isize>,
+    M: Matrix<usize> + MatrixOps<usize>,
 {
     let (rows, cols) = mat.dim();
     // a:1,1;    a:2,1;    ...; a:np,1
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test_reduce_case_1() {
-        let mut mat = DenseMatrix::<isize>::new(4, 6);
+        let mut mat = DenseMatrix::<usize>::new(4, 6);
 
         // https://courses.cs.duke.edu//fall06/cps296.1/Lectures/sec-IV-3.pdf
         // 1 1 1 0 0 0
@@ -74,11 +74,7 @@ mod tests {
         mat.set(3, 4, 1);
         mat.set(3, 5, 1);
 
-        println!("{:?}", mat);
-
         reduce_z2(&mut mat, 0);
-
-        println!("{:?}", mat);
 
         // 1 0 0 0 0 0
         // 0 1 0 0 0 0
@@ -113,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_reduce_case_2() {
-        let mut mat = DenseMatrix::<isize>::new(6, 4);
+        let mut mat = DenseMatrix::<usize>::new(6, 4);
 
         // https://courses.cs.duke.edu//fall06/cps296.1/Lectures/sec-IV-3.pdf
         // 1 1 0 0
