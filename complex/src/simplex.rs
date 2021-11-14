@@ -5,7 +5,7 @@ use std::fmt;
 use std::slice;
 
 /// A Vertex consists of an id and a weight.
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Default)]
 pub struct Vertex(usize, usize);
 
 impl Vertex {

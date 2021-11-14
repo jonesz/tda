@@ -2,6 +2,7 @@
 //! Fundamental utilities for computing and interacting with Simplices.
 mod simplex;
 mod simplex_trie;
+mod simplex_trie_arena;
 pub mod vietoris_rips;
 
 pub struct SimplicialComplex(simplex_trie::SimplexTrie, usize);
