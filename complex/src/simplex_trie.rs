@@ -55,7 +55,7 @@ impl Default for SimplexTrie {
 }
 
 impl SimplexTrie {
-    /// Create a new, empty SimplexTri
+    /// Create a new, empty SimplexTrie
     pub fn new() -> Self {
         SimplexTrie(Node::new())
     }
