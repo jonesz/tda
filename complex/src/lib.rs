@@ -6,6 +6,7 @@ mod simplex_trie_arena;
 mod simplex_trie_ptr;
 pub mod vietoris_rips;
 
+/* TODO: Reimplement when refactor is finished.
 pub struct SimplicialComplex(simplex_trie::SimplexTrie, usize);
 
 impl SimplicialComplex {
@@ -22,3 +23,5 @@ impl<'a> IntoIterator for &'a SimplicialComplex {
         self.0.into_iter()
     }
 }
+
+*/
