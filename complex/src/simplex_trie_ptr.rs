@@ -2,6 +2,7 @@
 //! Referenced from: 'The Simplex Tree: An Efficient Data Structure for
 //! General Simplicial Complexes - Jean-Daniel Boissonnat · Clément Maria'
 use crate::simplex::{Simplex, Vertex};
+use crate::simplex_trie::{IntoSimplexDimIter, SimplexTrie};
 use std::collections::{BTreeMap, VecDeque};
 
 // We're attempting to produce a trie structure; as an example:
@@ -46,23 +47,23 @@ where
 
 /// A SimplexTrie contains a single root node, corresponding to the empty
 /// set; simplices contained within K begin as child nodes off that root node.
-pub struct SimplexTrie(Node<Vertex>);
+pub struct SimplexTriePtr(Node<Vertex>);
 
-impl Default for SimplexTrie {
+impl Default for SimplexTriePtr {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl SimplexTrie {
+impl SimplexTrie for SimplexTriePtr {
     /// Create a new, empty SimplexTrie
-    pub fn new() -> Self {
-        SimplexTrie(Node::new())
+    fn new() -> Self {
+        SimplexTriePtr(Node::new())
     }
 
     /// Create a new SimplexTrie with a 0-skeleton of size 'sz'.
-    pub fn new_skel(sz: usize) -> Self {
-        let mut st = SimplexTrie(Node::new());
+    fn new_skel(sz: usize) -> Self {
+        let mut st = SimplexTriePtr(Node::new());
         for i in 0..sz {
             st.0.add(&[Vertex::new(i, 0); 1])
         }
@@ -73,20 +74,13 @@ impl SimplexTrie {
     // TODO: Rather than exposing a public function '.vertices()' on Simplex,
     // is there a trait for 'to_slice()' ? Or utilize the fact we've already
     // implemented iterators for Simplex.
-    pub fn add_simplex(&mut self, simplex: &Simplex) {
+    fn add_simplex(&mut self, simplex: &Simplex) {
         self.0.add(simplex.vertices())
     }
 
     // TODO: See above note in 'add_simplex'.
-    pub fn contains_simplex(&self, simplex: &Simplex) -> bool {
+    fn contains_simplex(&self, simplex: &Simplex) -> bool {
         self.0.contains(simplex.vertices())
-    }
-
-    /// Iterate, returning simplices of dimension 'sz'.
-    pub fn iter_dim(&self, sz: usize) -> SimplexTrieIterator {
-        let mut iter = self.into_iter();
-        iter.1 = Some(sz);
-        iter
     }
 }
 
@@ -163,7 +157,7 @@ impl<'a> Iterator for SimplexTrieIterator<'a> {
     }
 }
 
-impl<'a> IntoIterator for &'a SimplexTrie {
+impl<'a> IntoIterator for &'a SimplexTriePtr {
     type Item = Simplex;
     type IntoIter = SimplexTrieIterator<'a>;
 
@@ -175,6 +169,16 @@ impl<'a> IntoIterator for &'a SimplexTrie {
             iter.0.push_back((node, true))
         }
 
+        iter
+    }
+}
+
+impl<'a> IntoSimplexDimIter for &'a SimplexTriePtr {
+    type SimplexDimIter = SimplexTrieIterator<'a>;
+
+    fn iter_dim(self, sz: usize) -> Self::SimplexDimIter {
+        let mut iter = self.into_iter();
+        iter.1 = Some(sz);
         iter
     }
 }
@@ -202,7 +206,7 @@ mod tests {
 
     #[test]
     fn test_simplex_trie_iter() {
-        let mut st = SimplexTrie::new_skel(10);
+        let mut st = SimplexTriePtr::new_skel(10);
         let smplx_1 = Simplex::new(vec![Vertex::new(1, 0), Vertex::new(2, 3)]);
         st.add_simplex(&smplx_1);
 
@@ -217,7 +221,7 @@ mod tests {
 
     #[test]
     fn test_simplex_trie_iter_dim_0_skel() {
-        let st = SimplexTrie::new_skel(10);
+        let st = SimplexTriePtr::new_skel(10);
         let mut st_iter = st.iter_dim(0);
 
         // Iteration on the dimension 0, should return 10 entries.
@@ -233,7 +237,7 @@ mod tests {
 
     #[test]
     fn test_simplex_trie_iter_dim_1_skel() {
-        let mut st = SimplexTrie::new_skel(10);
+        let mut st = SimplexTriePtr::new_skel(10);
 
         let smplx_1 = Simplex::new(vec![Vertex::new(1, 0), Vertex::new(2, 3)]);
         st.add_simplex(&smplx_1);
