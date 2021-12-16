@@ -184,7 +184,7 @@ impl<'a> IntoSimplexDimIter for &'a SimplexTrieArena {
     type Item = Simplex;
     type SimplexDimIter = SimplexTrieIterator<'a>;
 
-    fn iter_dim(self, sz: usize) -> Self::SimplexDimIter {
+    fn iter_dim(&self, sz: usize) -> Self::SimplexDimIter {
         let mut iter = self.into_iter();
         iter.0 = sz;
         iter.3 = true;
@@ -241,7 +241,10 @@ mod tests {
     #[test]
     fn test_simplex_trie_iter_dim_0_skel() {
         let st = SimplexTrieArena::new_skel(10);
-        let mut st_iter = st.iter_dim(0);
+
+        // TODO: See note about the reference within the DimIter trait.
+        let s = &st;
+        let mut st_iter = s.iter_dim(0);
 
         // Iteration on the dimension 0, should return 10 entries.
         for i in 0..10 {
@@ -267,7 +270,9 @@ mod tests {
         ]);
         st.add_simplex(&smplx_2);
 
-        let mut st_iter = st.iter_dim(1);
+        // TODO: See note about the reference within the DimIter trait.
+        let s = &st;
+        let mut st_iter = s.iter_dim(1);
 
         // There should be a single 1-simplex, (1, 2).
         let value = st_iter.next();
