@@ -174,6 +174,7 @@ impl<'a> IntoIterator for &'a SimplexTriePtr {
 }
 
 impl<'a> IntoSimplexDimIter for &'a SimplexTriePtr {
+    type Item = Simplex;
     type SimplexDimIter = SimplexTrieIterator<'a>;
 
     fn iter_dim(self, sz: usize) -> Self::SimplexDimIter {

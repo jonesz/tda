@@ -9,6 +9,8 @@ pub trait SimplexTrie {
 }
 
 pub trait IntoSimplexDimIter {
-    type SimplexDimIter;
+    type Item;
+    type SimplexDimIter: Iterator<Item = Self::Item>;
+
     fn iter_dim(self, sz: usize) -> Self::SimplexDimIter;
 }
