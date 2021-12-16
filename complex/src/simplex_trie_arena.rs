@@ -2,7 +2,7 @@
 //! Referenced from: 'The Simplex Tree: An Efficient Data Structure for
 //! General Simplicial Complexes - Jean-Daniel Boissonnat · Clément Maria'
 use crate::simplex::{Simplex, Vertex};
-use crate::simplex_trie::SimplexTrie;
+use crate::simplex_trie::{IntoSimplexDimIter, SimplexTrie};
 
 /// A trie backed with an arena.
 struct TrieArena<T> {
@@ -128,13 +128,6 @@ impl SimplexTrie for SimplexTrieArena {
     fn contains_simplex(&self, simplex: &Simplex) -> bool {
         self.0.contains(simplex.vertices())
     }
-
-    fn iter_dim(&self, sz: usize) -> SimplexTrieIterator {
-        let mut iter = self.into_iter();
-        iter.0 = sz;
-        iter.3 = true;
-        iter
-    }
 }
 
 // Depth, Index, TrieArena, DimensionalIter.
@@ -184,6 +177,17 @@ impl<'a> IntoIterator for &'a SimplexTrieArena {
 
     fn into_iter(self) -> Self::IntoIter {
         SimplexTrieIterator(0, 0, &self.0, false)
+    }
+}
+
+impl<'a> IntoSimplexDimIter for &'a SimplexTrieArena {
+    type SimplexDimIter = SimplexTrieIterator<'a>;
+
+    fn iter_dim(self, sz: usize) -> Self::SimplexDimIter {
+        let mut iter = self.into_iter();
+        iter.0 = sz;
+        iter.3 = true;
+        iter
     }
 }
 
