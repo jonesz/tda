@@ -2,7 +2,7 @@
 /// Transform a SimplicialComplex into a format suitable for representation
 /// via GraphViz.
 use complex::simplex::Simplex;
-use complex::simplex_trie::SimplexTrie;
+use complex::simplex_trie::{SimplexTrie, IntoSimplexDimIter};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
@@ -19,8 +19,8 @@ struct Graph {
 
 /// Transform a SimplicialComplex into the GraphViz format, writing it to
 /// disk.
-pub fn render_to<W: Write, S: SimplexTrie + IntoIterator<Item = Simplex>>(
-    complex: S,
+pub fn render_to<W: Write, S: SimplexTrie + IntoSimplexDimIter<Item = Simplex>>(
+    complex: &S,
     output: &mut W,
 ) {
     let tmp: Graph = complex.into();
@@ -63,15 +63,15 @@ impl<'a> dot::GraphWalk<'a, Nd, Ed> for Graph {
     }
 }
 
-impl<S: SimplexTrie + IntoIterator<Item = Simplex>> From<S> for Graph {
-    fn from(complex: S) -> Graph {
+impl<S: SimplexTrie + IntoSimplexDimIter<Item=Simplex>> From<&S> for Graph {
+    fn from(complex: &S) -> Graph {
         let mut nodes: HashSet<Nd> = HashSet::new();
         let mut edges: HashSet<Ed> = HashSet::new();
         let mut weights: HashMap<Ed, usize> = HashMap::new();
 
         // To produce the entirety of the graph, we just need to produce
         // the 1-skeleton of the SimplicialComplex.
-        for simplex in complex.into_iter() {
+        for simplex in complex.iter_dim(1) {
             match simplex.dim() {
                 0 => {
                     for vertex in simplex {
