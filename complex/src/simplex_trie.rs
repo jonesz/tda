@@ -1,7 +1,7 @@
 // src/complex/src/simplex_trie.rs
 use crate::simplex::Simplex;
 
-trait SimplexTrie {
+pub trait SimplexTrie {
     type SimplexTrieIterator;
 
     fn new() -> Self;
