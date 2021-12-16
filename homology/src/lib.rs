@@ -4,18 +4,22 @@ mod boundary;
 mod reduction;
 
 use common::Matrix;
+use complex::simplex::Simplex;
+use complex::simplex_trie::{IntoSimplexDimIter, SimplexTrie};
 
 /// Compute the 'p'th betti number of a SimplicialComplex.
-pub fn compute_homology(complex: &complex::SimplicialComplex, p: usize) -> usize {
-
+pub fn compute_homology<S: SimplexTrie + IntoSimplexDimIter<Item = Simplex>>(
+    complex: &S,
+    p: usize,
+) -> usize {
     // TODO: Handle the 0'th betti number case, which is an edge case.
 
     // Zp
-    let mut zmat = boundary::boundary(&complex, p);
+    let mut zmat = boundary::boundary(complex, p);
     reduction::reduce_z2(&mut zmat, 0);
 
     // Bp
-    let mut bmat = boundary::boundary(&complex, p+1);
+    let mut bmat = boundary::boundary(complex, p + 1);
     reduction::reduce_z2(&mut bmat, 0);
 
     let (_, z_cols) = zmat.dim();
