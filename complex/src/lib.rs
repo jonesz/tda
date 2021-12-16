@@ -4,24 +4,9 @@ mod simplex;
 mod simplex_trie;
 mod simplex_trie_arena;
 mod simplex_trie_ptr;
-// pub mod vietoris_rips;
+pub mod vietoris_rips;
 
-/* TODO: Reimplement when refactor is finished.
-pub struct SimplicialComplex(simplex_trie::SimplexTrie, usize);
-
-impl SimplicialComplex {
-    pub fn iter_dim(&self, sz: usize) -> simplex_trie::SimplexTrieIterator {
-        self.0.iter_dim(sz)
-    }
+pub enum SimplicialComplexBacking {
+    SimplexTrieArena,
+    SimplexTriePtr,
 }
-
-impl<'a> IntoIterator for &'a SimplicialComplex {
-    type Item = simplex::Simplex;
-    type IntoIter = simplex_trie::SimplexTrieIterator<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
-*/

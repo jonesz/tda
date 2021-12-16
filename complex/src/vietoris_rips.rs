@@ -4,7 +4,6 @@
 //! of the Vietoris-Rips Complex - Afria Zomorodian".
 use crate::simplex::{Simplex, Vertex};
 use crate::simplex_trie::SimplexTrie;
-use crate::SimplicialComplex;
 use common::Matrix;
 use std::collections::HashSet;
 
@@ -33,9 +32,7 @@ fn lower_nbrs<M: Matrix<bool>>(adj: &M, vertex: &Vertex) -> Vec<usize> {
 // etc.
 /// Compute a Vietoris-Rips complex up to dimension 'dim' with an inductive
 /// algorithm.
-fn inductive<M: Matrix<bool>>(adj: &M, dim: usize, weight: usize) -> SimplicialComplex {
-    let mut sc = SimplicialComplex(SimplexTrie::new(), dim);
-
+fn inductive<M: Matrix<bool>, S: SimplexTrie>(sc: &mut S, adj: &M, dim: usize, weight: usize) {
     // See `ITERATOR_ISSUE.md` for concerns about utilizing an iterator within
     // this function; utilizing two vectors is likely more performant.
     let mut k: Vec<Simplex> = vec![];
@@ -44,7 +41,7 @@ fn inductive<M: Matrix<bool>>(adj: &M, dim: usize, weight: usize) -> SimplicialC
     // Compute the 0-skeleton.
     for i in 0..adj.dim().0 {
         let smplx = Simplex::new(vec![Vertex::new(i, 0)]);
-        sc.0.add_simplex(&smplx);
+        sc.add_simplex(&smplx);
         k.push(smplx);
     }
 
@@ -74,7 +71,7 @@ fn inductive<M: Matrix<bool>>(adj: &M, dim: usize, weight: usize) -> SimplicialC
                 vertices.push(Vertex::new(uv, weight));
                 let smplx = Simplex::new(vertices);
 
-                sc.0.add_simplex(&smplx);
+                sc.add_simplex(&smplx);
                 k1.push(smplx);
             }
         }
@@ -83,23 +80,22 @@ fn inductive<M: Matrix<bool>>(adj: &M, dim: usize, weight: usize) -> SimplicialC
         k = k1.clone();
         k1.clear();
     }
-
-    sc
 }
 
 pub struct VietorisRips;
 
 impl VietorisRips {
     /// Compute a Vietoris-Rips diagram from an adjacency matrix.
-    pub fn compute<M: Matrix<bool>>(
+    pub fn compute<M: Matrix<bool>, S: SimplexTrie>(
         alg: Option<VRAlgorithm>,
+        sc: &mut S,
         adj: &M,
         dim: usize,
         weight: usize,
-    ) -> SimplicialComplex {
+    ) {
         let alg = alg.unwrap_or(VRAlgorithm::Inductive);
         match alg {
-            VRAlgorithm::Inductive => inductive(adj, dim, weight),
+            VRAlgorithm::Inductive => inductive(sc, adj, dim, weight),
         }
     }
 }
@@ -107,6 +103,7 @@ impl VietorisRips {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::simplex_trie_arena::SimplexTrieArena;
     use common::dense::DenseMatrix;
 
     #[test]
@@ -143,6 +140,8 @@ mod tests {
     #[test]
     fn test_inductive() {
         let mut adj: DenseMatrix<bool> = DenseMatrix::new(4, 4);
+        let mut complex = SimplexTrieArena::new();
+
         // An adjacency matrix with alternating true/false values.
         for i in 0..4 {
             for j in 0..4 {
@@ -158,12 +157,12 @@ mod tests {
             }
         }
 
-        let complex = inductive(&adj, 3, 0);
+        inductive(&mut complex, &adj, 3, 0);
 
         // The 0-skeleton should be within the complex.
         for i in 0..4 {
             let smplx = Simplex::new(vec![Vertex::new(i, 0)]);
-            assert_eq!(complex.0.contains_simplex(&smplx), true);
+            assert_eq!(complex.contains_simplex(&smplx), true);
         }
 
         //   0 1 2 3
@@ -172,18 +171,21 @@ mod tests {
         // 2 0 1 0 1
         // 3 1 0 1 0
         let smplx = Simplex::new(vec![Vertex::new(1, 0), Vertex::new(0, 0)]);
-        assert_eq!(complex.0.contains_simplex(&smplx), true);
+        assert_eq!(complex.contains_simplex(&smplx), true);
 
         let smplx = Simplex::new(vec![Vertex::new(3, 0), Vertex::new(2, 0)]);
-        assert_eq!(complex.0.contains_simplex(&smplx), true);
+        assert_eq!(complex.contains_simplex(&smplx), true);
 
         let smplx = Simplex::new(vec![Vertex::new(3, 0), Vertex::new(0, 0)]);
-        assert_eq!(complex.0.contains_simplex(&smplx), true);
+        assert_eq!(complex.contains_simplex(&smplx), true);
     }
 
     #[test]
     fn test_inductive_subset() {
         let mut adj: DenseMatrix<bool> = DenseMatrix::new(10, 10);
+        let mut complex_1 = SimplexTrieArena::new();
+        let mut complex_2 = SimplexTrieArena::new();
+
         // An adjacency matrix with alternating true/false values.
         for i in 0..10 {
             for j in 0..10 {
@@ -200,11 +202,11 @@ mod tests {
         }
 
         // complex_1 should be a subset of complex_2.
-        let complex_1 = inductive(&adj, 4, 0);
-        let complex_2 = inductive(&adj, 5, 0);
+        inductive(&mut complex_1, &adj, 4, 0);
+        inductive(&mut complex_2, &adj, 5, 0);
 
-        for smplx in &complex_1.0 {
-            assert_eq!(complex_2.0.contains_simplex(&smplx), true);
+        for smplx in &complex_1 {
+            assert_eq!(complex_2.contains_simplex(&smplx), true);
         }
     }
 }
